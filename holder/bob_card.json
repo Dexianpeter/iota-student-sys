@@ -1,0 +1,25 @@
+{
+  "data": {
+    "issuer": "did:iota:school:0x302a300506032b65700321008f8f41c0",
+    "subject": {
+      "basicInfo": {
+        "name": "Bob Lee",
+        "id": "B11001005"
+      },
+      "academicStatus": {
+        "department": "EE",
+        "year": 2,
+        "gpa": 3.7
+      },
+      "activities": [
+        "Photography Society"
+      ]
+    },
+    "issuedAt": "2026-02-06T13:05:02.559Z",
+    "type": "UniversityStudentCredential"
+  },
+  "proof": {
+    "type": "Ed25519Signature",
+    "signature": "92ef56f25f75582ca60252c7e85cce05d7d630ea3dbd3aa3a4be6fbce821cd39bee856aa0b9f5ca5e2c4906fd0889193992ea3ec53eb342da0e6cb7c58c55c0e"
+  }
+}

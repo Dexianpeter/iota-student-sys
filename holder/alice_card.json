@@ -1,0 +1,26 @@
+{
+  "data": {
+    "issuer": "did:iota:school:0x302a300506032b65700321008f8f41c0",
+    "subject": {
+      "basicInfo": {
+        "name": "Alice Wang",
+        "id": "B11001001"
+      },
+      "academicStatus": {
+        "department": "CS",
+        "year": 3,
+        "gpa": 3.9
+      },
+      "activities": [
+        "Blockchain Club",
+        "Basketball Team"
+      ]
+    },
+    "issuedAt": "2026-02-06T13:05:02.549Z",
+    "type": "UniversityStudentCredential"
+  },
+  "proof": {
+    "type": "Ed25519Signature",
+    "signature": "40e708fc236aec50202bf96bf69235a23c28670ce520d7773e7cd26b7149fa424cca17ce992723f887a6d8f9e325773e318f3eb5170ade397c66218de63a9d08"
+  }
+}
