@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IOTA Student Identity - Issuer Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 40px; }
+        .container { max-width: 600px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: auto; }
+        h2 { color: #2c3e50; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { background-color: #0056b3; }
+        #result { margin-top: 20px; background: #272822; color: #f8f8f2; padding: 15px; border-radius: 6px; overflow-x: auto; display: none; }
+        pre { white-space: pre-wrap; word-wrap: break-word; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎓 Issue Student Credential</h2>
+    <div class="form-group">
+        <label>Student Name:</label>
+        <input type="text" id="name" placeholder="e.g. Alice Wang">
+    </div>
+    <div class="form-group">
+        <label>Student ID:</label>
+        <input type="text" id="sid" placeholder="e.g. B11001001">
+    </div>
+    <div class="form-group">
+        <label>Department:</label>
+        <input type="text" id="dept" placeholder="e.g. Computer Science">
+    </div>
+    <button onclick="issueCredential()">Generate & Sign VC</button>
+
+    <div id="result">
+        <strong>✅ Verifiable Credential Issued:</strong>
+        <pre id="vcContent"></pre>
+    </div>
+</div>
+
+<script>
+    async function issueCredential() {
+        const studentProfile = {
+            basicInfo: {
+                name: document.getElementById('name').value,
+                id: document.getElementById('sid').value
+            },
+            academicStatus: {
+                department: document.getElementById('dept').value,
+                gpa: 4.0 // 這裡可以根據需要增加輸入框
+            }
+        };
+
+        try {
+            const response = await fetch('http://localhost:3000/issue-credential', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(studentProfile)
+            });
+
+            const vc = await response.json();
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('vcContent').textContent = JSON.stringify(vc, null, 2);
+        } catch (error) {
+            alert('Error connecting to Issuer Server. Make sure it is running!');
+        }
+    }
+</script>
+
+</body>
+</html>
