@@ -49,6 +49,8 @@
                 }
             };
             reader.readAsText(file);
+            // 修正：清空 input value，確保如果使用者修改了同一個檔案並重新上傳時，能觸發 onchange 事件
+            e.target.value = '';
         };
 
         async function verifyCredential() {
