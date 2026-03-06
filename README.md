@@ -1,20 +1,21 @@
 #  去中心化數位學位證書系統 (IOTA SSI Demo)
 
 這是一個基於 **IOTA Tangle** 與 **Verifiable Credentials (VC)** 標準的去中心化身分 (SSI) 演示專案。
-本系統模擬了學校發證、學生持有、以及區塊鏈存證的完整流程。
+本系統模擬了學校發證、學生持有 (模擬 NFT 形式)、以及第三方驗證的完整流程。
 
 ##  系統架構 (System Architecture)
 
 本專案由三個主要角色組成：
 
 1.  **Issuer (學校)**: 負責簽發數位憑證，擁有學校的私鑰。
-2.  **Holder (學生)**: 接收並保管憑證，擁有自主權決定是否上鏈存證。
-3.  **Verifier (驗證者/區塊鏈)**: 透過 IOTA Tangle 驗證憑證的簽章與存證紀錄。
+2.  **Holder (學生)**: 接收並保管憑證 (可視為錢包中的 NFT 資產)，並向第三方出示。
+3.  **Verifier (驗證者)**: 接收學生出示的憑證，並透過 IOTA Tangle 驗證其真偽與鏈上存證紀錄。
 
 ```mermaid
 sequenceDiagram
     participant School as 🏫 Issuer (學校)
     participant Student as 📱 Holder (學生錢包)
+    participant Verifier as 🔍 Verifier (第三方驗證)
     participant Tangle as 🕸️ IOTA Tangle (區塊鏈)
 
     Note over School: 1. 建立學校數位身分 (DID)
@@ -25,19 +26,16 @@ sequenceDiagram
     Student->>School: 提交申請 (姓名, 學號...)
     School->>School: 使用私鑰簽署憑證 (VC)
     School->>Student: 核發數位證書 (.json)
+    Note right of School: (進階場景：學校可直接鑄造 NFT 給學生)
 
     Note over Student: 3. 驗證與持有
-    Student->>Student: 驗證學校簽章 (Verify Signature)
-    Student->>Student: 儲存於本地錢包
+    Student->>Student: 儲存於本地錢包 (模擬持有 NFT)
 
-    Note over Student, Tangle: 4. 上鏈存證 (Anchoring)
-    Student->>Student: 連接 TanglePay 錢包
-    Student->>Tangle: 上傳憑證指紋 (Signature & DID)
-    Tangle-->>Student: 回傳 Block ID (存證完成)
-
-    Note over Student, Verifier: 5. 第三方驗證 (Verification)
+    Note over Student, Verifier: 4. 第三方驗證 (Verification)
     Student->>Verifier: 出示憑證 (.json)
-    Verifier->>Verifier: 檢查簽章有效性
+    Verifier->>Verifier: 1. 檢查數位簽章 (Signature)
+    Verifier->>Tangle: 2. (選用) 查詢鏈上存證/NFT 狀態
+    Tangle-->>Verifier: 回傳鏈上紀錄
     Verifier-->>Student: 驗證通過/失敗
 ```
 
