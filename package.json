@@ -1,7 +1,10 @@
 {
   "dependencies": {
+    "@iota/sdk": "^1.1.6",
     "cores": "^0.8.5",
     "cors": "^2.8.6",
-    "express": "^5.2.1"
-  }
+    "express": "^5.2.1",
+    "qrcode-decoder": "^0.3.4"
+  },
+  "type": "module"
 }

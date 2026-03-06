@@ -1,74 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOTA Student Identity - Issuer Portal</title>
+    <title>數位學位證書簽發系統</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 40px; }
-        .container { max-width: 600px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: auto; }
-        h2 { color: #2c3e50; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; background-color: #f9f9f9; color: #333; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        button:hover { background-color: #0056b3; }
-        #result { margin-top: 20px; background: #272822; color: #f8f8f2; padding: 15px; border-radius: 6px; overflow-x: auto; display: none; }
-        pre { white-space: pre-wrap; word-wrap: break-word; font-size: 14px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background 0.3s; }
+        button:hover { background-color: #2980b9; }
+        #result { margin-top: 25px; display: none; }
+        pre { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; overflow-x: auto; }
     </style>
 </head>
 <body>
+    <h1>🎓 數位學位證書簽發平台</h1>
+    
+    <div class="card">
+        <h3>輸入學生資料</h3>
+        <div class="form-group">
+            <label>姓名 (Name)</label>
+            <input type="text" id="name" value="Charlie Chen" placeholder="請輸入學生姓名">
+        </div>
+        <div class="form-group">
+            <label>學號 (Student ID)</label>
+            <input type="text" id="studentId" value="B11002001" placeholder="請輸入學號">
+        </div>
+        <div class="form-group">
+            <label>系所 (Department)</label>
+            <input type="text" id="dept" value="Physics" placeholder="請輸入系所">
+        </div>
+        <div class="form-group">
+            <label>GPA</label>
+            <input type="number" id="gpa" value="3.9" step="0.1" placeholder="請輸入 GPA">
+        </div>
+        <div class="form-group">
+            <label>憑證類型 (Credential Type)</label>
+            <select id="vcType" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="UniversityStudentCredential">學生證 (Student ID)</option>
+                <option value="UniversityDegreeCredential">畢業證書 (Degree)</option>
+                <option value="ClubActivityCredential">社團證明 (Club Activity)</option>
+            </select>
+        </div>
+        <button onclick="issueCredential()">簽發證書 (Issue VC)</button>
+    </div>
 
-<div class="container">
-    <h2>🎓 Issue Student Credential</h2>
-    <div class="form-group">
-        <label>Student Name:</label>
-        <input type="text" id="name" placeholder="e.g. Alice Wang">
+    <div id="result" class="card">
+        <h3>✅ 簽發成功！憑證內容 (VC)：</h3>
+        <pre id="jsonOutput"></pre>
     </div>
-    <div class="form-group">
-        <label>Student ID:</label>
-        <input type="text" id="sid" placeholder="e.g. B11001001">
-    </div>
-    <div class="form-group">
-        <label>Department:</label>
-        <input type="text" id="dept" placeholder="e.g. Computer Science">
-    </div>
-    <button onclick="issueCredential()">Generate & Sign VC</button>
 
-    <div id="result">
-        <strong>✅ Verifiable Credential Issued:</strong>
-        <pre id="vcContent"></pre>
-    </div>
-</div>
+    <script>
+        async function issueCredential() {
+            const payload = {
+                type: document.getElementById('vcType').value,
+                studentProfile: {
+                    basicInfo: {
+                        name: document.getElementById('name').value,
+                        id: document.getElementById('studentId').value
+                    },
+                    academicStatus: {
+                        department: document.getElementById('dept').value,
+                        year: 1, // 預設值，未來也可以做成輸入框
+                        gpa: parseFloat(document.getElementById('gpa').value) || 0 // 從輸入框讀取 GPA
+                    }
+                }
+            };
 
-<script>
-    async function issueCredential() {
-        const studentProfile = {
-            basicInfo: {
-                name: document.getElementById('name').value,
-                id: document.getElementById('sid').value
-            },
-            academicStatus: {
-                department: document.getElementById('dept').value,
-                gpa: 4.0 // 這裡可以根據需要增加輸入框
+            try {
+                const response = await fetch('/issue-credential', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('jsonOutput').textContent = JSON.stringify(result.vc, null, 2);
+
+                // 自動下載 JSON 憑證
+                const blob = new Blob([JSON.stringify(result.vc, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${payload.studentProfile.basicInfo.name}_${payload.type}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } catch (err) {
+                alert("簽發失敗，請檢查伺服器是否啟動。");
+                console.error(err);
             }
-        };
-
-        try {
-            const response = await fetch('http://localhost:3000/issue-credential', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(studentProfile)
-            });
-
-            const vc = await response.json();
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('vcContent').textContent = JSON.stringify(vc, null, 2);
-        } catch (error) {
-            alert('Error connecting to Issuer Server. Make sure it is running!');
         }
-    }
-</script>
-
+    </script>
 </body>
 </html>

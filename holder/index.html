@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生數位錢包 (Web3)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; background-color: #f9f9f9; color: #333; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        button { background-color: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background 0.3s; margin-right: 10px; margin-bottom: 10px; }
+        button:hover { background-color: #2980b9; }
+        button.secondary { background-color: #27ae60; }
+        button.secondary:hover { background-color: #219150; }
+        #wallet-status { margin-top: 15px; padding: 10px; background: #e8f6f3; border-radius: 4px; color: #16a085; display: none; }
+        .vc-content { border: 1px solid #eee; padding: 15px; border-radius: 5px; background: #fafafa; }
+        .status-badge { display: inline-block; padding: 5px 10px; border-radius: 15px; font-size: 14px; font-weight: bold; margin-left: 10px; }
+        .status-valid { background-color: #d4edda; color: #155724; }
+        .status-invalid { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>📱 我的數位錢包 (Web3 DApp)</h1>
+
+    <!-- 步驟 1: 導入憑證 -->
+    <div class="card">
+        <h3>1. 導入憑證</h3>
+        <p>請選擇您從學校收到的 <code>.json</code> 憑證檔案。</p>
+        <input type="file" id="fileInput" accept=".json" style="display:none">
+        <button onclick="document.getElementById('fileInput').click()">📂 選擇憑證檔案</button>
+        
+        <div id="card-display" style="margin-top: 20px; display:none;">
+            <!-- 憑證內容將顯示於此 -->
+        </div>
+
+        <div id="verification-area" style="margin-top: 15px; display:none;">
+            <button onclick="verifyCredential()" class="secondary">🔍 驗證憑證真偽</button>
+            <span id="verification-result"></span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { connectWallet, uploadToTangle } from './wallet_utils.js';
+
+        let currentVc = null;
+
+        // --- 1. 讀取檔案邏輯 ---
+        document.getElementById('fileInput').onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    currentVc = JSON.parse(event.target.result);
+                    // 簡單的資料結構相容性處理
+                    const subject = currentVc.data ? currentVc.data.subject : currentVc.credentialSubject;
+                    const issuer = currentVc.data ? currentVc.data.issuer : currentVc.issuer;
+
+                    renderCard(subject, issuer);
+                    document.getElementById('card-display').style.display = 'block';
+                    document.getElementById('verification-area').style.display = 'block';
+                } catch (err) {
+                    alert("檔案格式錯誤，請確認是有效的 VC JSON 檔。");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        function renderCard(subject, issuer) {
+            document.getElementById('card-display').innerHTML = `
+                <div class="vc-content">
+                    <h4 style="margin-top:0">🎓 數位學生證</h4>
+                    <p><strong>姓名：</strong> ${subject.basicInfo.name}</p>
+                    <p><strong>學號：</strong> ${subject.basicInfo.id}</p>
+                    <p><strong>發證單位 (DID)：</strong> ${issuer}</p>
+                </div>
+            `;
+        }
+
+        // --- 驗證邏輯 ---
+        async function verifyCredential() {
+            if (!currentVc) return;
+            
+            const resultSpan = document.getElementById('verification-result');
+            resultSpan.innerHTML = "⏳ 驗證中...";
+
+            try {
+                // 呼叫 Issuer 的驗證 API (Port 3000)
+                const response = await fetch('http://localhost:3000/verify-credential', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentVc)
+                });
+                const result = await response.json();
+
+                if (result.verified) {
+                    resultSpan.innerHTML = `<span class="status-badge status-valid">✅ 驗證成功：學校簽章有效</span>`;
+                    
+                    // 新增：顯示詳細憑證資訊
+                    const detailsHtml = `
+                        <div style="margin-top: 15px; padding: 15px; background: #f0f9ff; border-left: 4px solid #3498db; border-radius: 4px;">
+                            <h4 style="margin-top: 0; color: #2980b9;">📄 憑證技術細節</h4>
+                            <ul style="list-style: none; padding: 0; margin: 0; font-size: 14px;">
+                                <li style="margin-bottom: 5px;"><strong>📅 發證日期：</strong> ${new Date(currentVc.data.issuedAt).toLocaleString()}</li>
+                                <li style="margin-bottom: 5px;"><strong>🏷️ 憑證類型：</strong> ${currentVc.data.type}</li>
+                                <li style="margin-bottom: 5px;"><strong>🔐 簽章演算法：</strong> ${currentVc.proof.type}</li>
+                                <li style="margin-bottom: 5px;"><strong>✍️ 數位簽章：</strong> <code style="background: #eee; padding: 2px 4px; border-radius: 3px;">${currentVc.proof.signature.substring(0, 20)}...</code></li>
+                            </ul>
+                        </div>
+                    `;
+                    
+                    // 將詳細資訊插入到驗證結果下方
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.innerHTML = detailsHtml;
+                    document.getElementById('verification-area').appendChild(detailsDiv);
+
+                } else {
+                    resultSpan.innerHTML = `<span class="status-badge status-invalid">❌ 驗證失敗：簽章無效或資料被竄改</span>`;
+                    alert("警告：這張憑證無效！無法進行上鏈。");
+                }
+            } catch (err) {
+                console.error(err);
+                resultSpan.innerHTML = `<span class="status-badge status-invalid">⚠️ 連線錯誤</span>`;
+                alert("無法連接到驗證伺服器 (Port 3000)，請確認 Issuer Server 已啟動。");
+            }
+        }
+        // 將 verifyCredential 掛載到 window，以便 HTML onclick 可以呼叫
+        window.verifyCredential = verifyCredential;
+        
+        // 定義全域處理函式，供 HTML 按鈕呼叫
+        window.handleConnectWallet = async function() {
+            const address = await connectWallet();
+            if (address) {
+                const statusDiv = document.getElementById('wallet-status');
+                if (statusDiv) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.innerHTML = `✅ 已連接: <code>${address.slice(0, 10)}...</code>`;
+                }
+                
+                const btnConnect = document.getElementById('btnConnect');
+                if (btnConnect) btnConnect.style.display = 'none';
+                
+                const btnUpload = document.getElementById('btnUpload');
+                if (btnUpload) btnUpload.style.display = 'inline-block';
+            }
+        };
+
+        window.handleUploadToTangle = async function() {
+            if (!currentVc) return;
+            
+            const res = await uploadToTangle(currentVc);
+            
+            if (res) {
+                alert("🚀 上鏈成功！");
+                
+                // 顯示 Explorer 連結
+                const blockId = res.blockId || res.messageId || "unknown";
+                const statusDiv = document.getElementById('wallet-status');
+                if (statusDiv) {
+                    statusDiv.innerHTML += `
+                        <br><br>
+                        <strong>🎉 上鏈成功！</strong><br>
+                        Block ID: ${blockId.slice(0, 15)}...<br>
+                        <a href="https://explorer.iota.org/testnet/block/${blockId}" target="_blank" style="color:#3498db">👉 在 Explorer 查看</a>
+                    `;
+                }
+            }
+        };
+    </script>
+</body>
+</html>

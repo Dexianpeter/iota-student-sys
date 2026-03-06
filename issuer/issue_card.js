@@ -1,49 +1,10 @@
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { issueVerifiableCredential } from './vc_utils.js';
+import { fileURLToPath } from 'url';
 
-/**
- * 核心簽發函式：將學生資料封裝成數位憑證 (VC)
- * @param {Object} studentProfile - 傳入的學生複雜物件
- */
-function createVerifiableCredential(studentProfile) {
-    try {
-        // 1. 讀取學校私鑰（Issuer 的數位印章）
-        const vaultPath = path.join(__dirname, '../data/school_vault.json');
-        const schoolVault = JSON.parse(fs.readFileSync(vaultPath, 'utf8'));
-        const privateKey = Buffer.from(schoolVault.privateKey, 'hex');
-
-        // 2. 構建完整資料物件 (Full Data Object)
-
-        const fullData = {
-            issuer: schoolVault.did,
-            subject: studentProfile, // 嵌入多層次物件
-            issuedAt: new Date().toISOString(),
-            type: "UniversityStudentCredential"
-        };
-
-        // 3. 執行數位簽署 (Digital Signing)
-        // 使用 UTF-8 編碼將物件轉為字串並計算簽名
-        const dataToSign = JSON.stringify(fullData);
-        const signature = crypto.sign(null, Buffer.from(dataToSign), {
-            key: privateKey,
-            format: 'der',
-            type: 'pkcs8'
-        });
-
-        // 4. 回傳標準格式的憑證物件
-        return {
-            data: fullData,
-            proof: {
-                type: "Ed25519Signature",
-                signature: signature.toString('hex')
-            }
-        };
-    } catch (error) {
-        console.error("Issuance Error:", error);
-        return null;
-    }
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // --- 批次簽發與自動化儲存邏輯 ---
 
@@ -78,7 +39,7 @@ if (!fs.existsSync(holderDir)) {
 
 // 3. 遍歷學生清單，產出數位憑證並存檔
 students.forEach(s => {
-    const vc = createVerifiableCredential(s.profile);
+    const vc = issueVerifiableCredential(s.profile);
     if (vc) {
         const filePath = path.join(holderDir, `${s.name}_card.json`);
         // 使用 UTF-8 編碼將完整 VC 存入學生「錢包」

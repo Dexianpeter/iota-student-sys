@@ -1,6 +1,10 @@
-const crypto = require('crypto');
-const fs = require('fs'); // 引入檔案系統模組
-const path = require('path');
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * 建立學校身分與金鑰對
@@ -31,9 +35,14 @@ async function createSchool() {
 
         // 3. 設定存檔路徑並執行寫入
         // 使用 path.join 確保在不同作業系統（Windows/Linux）路徑都能正確運作
-        const dataPath = path.join(__dirname, '../data/school_vault.json');
+        const dataDir = path.join(__dirname, '../data');
+        const dataPath = path.join(dataDir, 'school_vault.json');
         
-        // 確保 data 資料夾存在（實務上建議先用 fs.mkdirSync 檢查）
+        // 確保 data 資料夾存在
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+
         fs.writeFileSync(dataPath, JSON.stringify(schoolData, null, 2));
 
         console.log("========================================");

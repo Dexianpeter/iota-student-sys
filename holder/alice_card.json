@@ -1,6 +1,6 @@
 {
   "data": {
-    "issuer": "did:iota:school:0x302a300506032b65700321008f8f41c0",
+    "issuer": "did:iota:school:0x302a300506032b65700321005950e91a",
     "subject": {
       "basicInfo": {
         "name": "Alice Wang",
@@ -16,11 +16,11 @@
         "Basketball Team"
       ]
     },
-    "issuedAt": "2026-02-06T13:05:02.549Z",
+    "issuedAt": "2026-03-05T06:56:09.053Z",
     "type": "UniversityStudentCredential"
   },
   "proof": {
     "type": "Ed25519Signature",
-    "signature": "40e708fc236aec50202bf96bf69235a23c28670ce520d7773e7cd26b7149fa424cca17ce992723f887a6d8f9e325773e318f3eb5170ade397c66218de63a9d08"
+    "signature": "3db6c02c35b03b8b003c510b7ed00aa9eede06875e57aead2a071dba7f1569f71e0dc2327b2bfde43ea1627cffa358a228d9bfec5d819f7388415b580a095e01"
   }
 }

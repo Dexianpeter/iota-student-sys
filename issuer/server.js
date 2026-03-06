@@ -1,74 +1,85 @@
-const express = require('express');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import express from 'express';
+import { issueVerifiableCredential } from './vc_utils.js';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import cors from 'cors';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json()); // 解析 JSON 格式的請求體
+app.use(cors()); // 啟用 CORS
+app.use(express.json());
+app.use(express.static(path.join(__dirname)));
 
 const PORT = 3000;
 
-/**
- * 核心簽發函式：將傳入的學生 Profile 簽署為憑證 (VC)
- */
-function issueVC(studentProfile) {
-    // 1. 讀取學校私鑰 (簽章用)
-    const vaultPath = path.join(__dirname, '../data/school_vault.json');
-    const schoolVault = JSON.parse(fs.readFileSync(vaultPath, 'utf8'));
-    const privateKey = Buffer.from(schoolVault.privateKey, 'hex');
-
-    // 2. 構建完整憑證物件 (包含之前討論的 Complex Object)
-    const fullData = {
-        issuer: schoolVault.did,
-        subject: studentProfile, // 這裡接收前端傳來的學生資料物件
-        issuedAt: new Date().toISOString(),
-        type: "UniversityStudentCredential"
-    };
-
-    // 3. 數位簽署 (Ed25519)
-    const dataToSign = JSON.stringify(fullData);
-    const signature = crypto.sign(null, Buffer.from(dataToSign), {
-        key: privateKey,
-        format: 'der',
-        type: 'pkcs8'
-    });
-
-    return {
-        data: fullData,
-        proof: {
-            type: "Ed25519Signature",
-            signature: signature.toString('hex')
-        }
-    };
-}
-
 // --- API 路由 ---
 
-/**
- * [POST] /issue-credential
- * 接收學生資料，回傳簽名後的憑證
- */
 app.post('/issue-credential', (req, res) => {
-    const studentProfile = req.body;
-
-    // 簡單檢查資料完整性
+    const { studentProfile, type } = req.body;
+    
     if (!studentProfile || !studentProfile.basicInfo) {
         return res.status(400).json({ error: "Missing student basic information" });
     }
 
-    const vc = issueVC(studentProfile);
+    const vc = issueVerifiableCredential(studentProfile, type);
     
     if (vc) {
+        // 新增：將完整的 VC 物件轉換為 Base64 字串
+        const base64Vc = Buffer.from(JSON.stringify(vc)).toString('base64');
         console.log(`Success! Issued credential for: ${studentProfile.basicInfo.name}`);
-        res.json(vc); // 回傳 JSON 給前端
+        
+        // 同時回傳 VC JSON 和 Base64 字串
+        res.json({ vc: vc, base64Vc: base64Vc }); 
     } else {
         res.status(500).json({ error: "Failed to issue credential" });
+    }
+});
+
+// 新增：驗證憑證 API
+app.post('/verify-credential', (req, res) => {
+    const vc = req.body;
+
+    try {
+        // 1. 讀取學校公鑰 (從 vault 中取得)
+        const vaultPath = path.join(__dirname, '../data/school_vault.json');
+        const schoolVault = JSON.parse(fs.readFileSync(vaultPath, 'utf8'));
+
+        // 2. 檢查 Issuer DID 是否匹配
+        if (vc.data.issuer !== schoolVault.did) {
+            return res.json({ verified: false, message: "Issuer DID mismatch" });
+        }
+
+        // 3. 驗證簽章
+        const dataToVerify = JSON.stringify(vc.data);
+        const signatureBuffer = Buffer.from(vc.proof.signature, 'hex');
+        const publicKey = crypto.createPublicKey({
+            key: Buffer.from(schoolVault.privateKey, 'hex'),
+            format: 'der',
+            type: 'pkcs8'
+        });
+
+        const isVerified = crypto.verify(
+            null,
+            Buffer.from(dataToVerify),
+            publicKey,
+            signatureBuffer
+        );
+
+        res.json({ verified: isVerified });
+
+    } catch (error) {
+        console.error("Verification Error:", error);
+        res.status(500).json({ verified: false, message: "Server error during verification" });
     }
 });
 
 app.listen(PORT, () => {
     console.log(`========================================`);
     console.log(`Issuer Server running on http://localhost:${PORT}`);
-    console.log(`Ready to handle issuance requests.`);
+    console.log(`Open http://localhost:${PORT}/index.html to issue credentials.`);
     console.log(`========================================`);
 });

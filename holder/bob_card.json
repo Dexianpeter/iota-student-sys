@@ -1,6 +1,6 @@
 {
   "data": {
-    "issuer": "did:iota:school:0x302a300506032b65700321008f8f41c0",
+    "issuer": "did:iota:school:0x302a300506032b65700321005950e91a",
     "subject": {
       "basicInfo": {
         "name": "Bob Lee",
@@ -15,11 +15,11 @@
         "Photography Society"
       ]
     },
-    "issuedAt": "2026-02-06T13:05:02.559Z",
+    "issuedAt": "2026-03-05T06:56:09.071Z",
     "type": "UniversityStudentCredential"
   },
   "proof": {
     "type": "Ed25519Signature",
-    "signature": "92ef56f25f75582ca60252c7e85cce05d7d630ea3dbd3aa3a4be6fbce821cd39bee856aa0b9f5ca5e2c4906fd0889193992ea3ec53eb342da0e6cb7c58c55c0e"
+    "signature": "e78ff3c80b1b4739bcf0c1756ffdc8da7f2d8470c588428c388eac3637a48d9f26b32875c4289d96af388299eee34b606555e3e02f466175225457f8966f3a0b"
   }
 }
